@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyPass</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===== Setup screen (first run) ===== -->
+  <div id="screen-setup" class="screen hidden">
+    <div class="header">
+      <div class="logo">🔐</div>
+      <h1>MyPass</h1>
+      <p class="subtitle">设置主密码以保护您的密码库</p>
+    </div>
+    <div class="form-group">
+      <label>主密码</label>
+      <div class="input-wrap">
+        <input type="password" id="setup-password" placeholder="至少 12 位，包含大小写字母、数字和符号" autocomplete="new-password" />
+        <button class="toggle-vis" data-target="setup-password" type="button">👁</button>
+      </div>
+      <div class="strength-bar">
+        <div id="setup-strength-fill" class="strength-fill"></div>
+      </div>
+      <span id="setup-strength-label" class="strength-label"></span>
+    </div>
+    <div class="form-group">
+      <label>确认主密码</label>
+      <div class="input-wrap">
+        <input type="password" id="setup-confirm" placeholder="再次输入主密码" autocomplete="new-password" />
+        <button class="toggle-vis" data-target="setup-confirm" type="button">👁</button>
+      </div>
+    </div>
+    <p class="warning">⚠️ 主密码无法找回，请务必牢记</p>
+    <button id="btn-setup" class="btn btn-primary btn-full">创建密码库</button>
+    <div id="setup-error" class="error-msg hidden"></div>
+  </div>
+
+  <!-- ===== Unlock screen ===== -->
+  <div id="screen-unlock" class="screen hidden">
+    <div class="header">
+      <div class="logo">🔐</div>
+      <h1>MyPass</h1>
+      <p class="subtitle">输入主密码解锁</p>
+    </div>
+    <div class="form-group">
+      <label>主密码</label>
+      <div class="input-wrap">
+        <input type="password" id="unlock-password" placeholder="主密码" autocomplete="current-password" />
+        <button class="toggle-vis" data-target="unlock-password" type="button">👁</button>
+      </div>
+    </div>
+    <button id="btn-unlock" class="btn btn-primary btn-full">解锁</button>
+    <div id="unlock-error" class="error-msg hidden"></div>
+  </div>
+
+  <!-- ===== Main screen ===== -->
+  <div id="screen-main" class="screen hidden">
+    <!-- Top bar -->
+    <div class="topbar">
+      <span class="brand">🔐 MyPass</span>
+      <div class="topbar-actions">
+        <button id="btn-add-entry" class="btn btn-sm btn-primary" title="添加新条目">＋ 添加</button>
+        <button id="btn-gen-only" class="btn btn-sm btn-secondary" title="密码生成器">⚙ 生成</button>
+        <button id="btn-settings" class="btn btn-icon" title="设置">⚙️</button>
+        <button id="btn-lock" class="btn btn-icon" title="锁定">🔒</button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <input type="text" id="search-input" placeholder="🔍 搜索网站或用户名…" />
+    </div>
+
+    <!-- Entry list -->
+    <div id="entry-list" class="entry-list">
+      <div class="empty-state" id="empty-state">暂无记录，点击"添加"开始</div>
+    </div>
+  </div>
+
+  <!-- ===== Add / Edit Entry Modal ===== -->
+  <div id="modal-entry" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modal-entry-title">添加条目</h2>
+        <button id="modal-entry-close" class="btn btn-icon">✕</button>
+      </div>
+      <div class="form-group">
+        <label>网站 / 应用</label>
+        <input type="text" id="entry-site" placeholder="例: github.com" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label>用户名 / 邮箱</label>
+        <input type="text" id="entry-username" placeholder="用户名或邮箱" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <div class="input-wrap">
+          <input type="password" id="entry-password" placeholder="密码" autocomplete="off" />
+          <button class="toggle-vis" data-target="entry-password" type="button">👁</button>
+        </div>
+        <div class="strength-bar">
+          <div id="entry-strength-fill" class="strength-fill"></div>
+        </div>
+        <span id="entry-strength-label" class="strength-label"></span>
+        <button id="btn-fill-gen" class="btn btn-sm btn-secondary mt-4">使用生成器填入</button>
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea id="entry-notes" placeholder="可选备注" rows="2"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-entry-cancel" class="btn btn-secondary">取消</button>
+        <button id="btn-entry-save" class="btn btn-primary">保存</button>
+      </div>
+      <div id="entry-error" class="error-msg hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== Password Generator Modal ===== -->
+  <div id="modal-gen" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>密码生成器</h2>
+        <button id="modal-gen-close" class="btn btn-icon">✕</button>
+      </div>
+      <div class="gen-output-wrap">
+        <input type="text" id="gen-output" readonly />
+        <button id="btn-gen-copy" class="btn btn-sm btn-secondary">复制</button>
+      </div>
+      <div class="strength-bar mt-4">
+        <div id="gen-strength-fill" class="strength-fill"></div>
+      </div>
+      <span id="gen-strength-label" class="strength-label"></span>
+
+      <div class="form-group mt-8">
+        <label>长度: <span id="gen-length-val">20</span></label>
+        <input type="range" id="gen-length" min="8" max="64" value="20" />
+      </div>
+
+      <div class="checkbox-grid">
+        <label class="checkbox-label">
+          <input type="checkbox" id="gen-upper" checked /> 大写字母 (A-Z)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="gen-lower" checked /> 小写字母 (a-z)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="gen-numbers" checked /> 数字 (0-9)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="gen-symbols" checked /> 符号 (!@#…)
+        </label>
+      </div>
+
+      <button id="btn-gen-refresh" class="btn btn-primary btn-full mt-8">重新生成</button>
+      <div id="gen-error" class="error-msg hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== Settings Modal ===== -->
+  <div id="modal-settings" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>设置</h2>
+        <button id="modal-settings-close" class="btn btn-icon">✕</button>
+      </div>
+      <h3 class="section-title">更改主密码</h3>
+      <div class="form-group">
+        <label>当前主密码</label>
+        <div class="input-wrap">
+          <input type="password" id="settings-current-pw" placeholder="当前主密码" />
+          <button class="toggle-vis" data-target="settings-current-pw" type="button">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>新主密码</label>
+        <div class="input-wrap">
+          <input type="password" id="settings-new-pw" placeholder="新主密码（至少 12 位）" />
+          <button class="toggle-vis" data-target="settings-new-pw" type="button">👁</button>
+        </div>
+        <div class="strength-bar">
+          <div id="settings-strength-fill" class="strength-fill"></div>
+        </div>
+        <span id="settings-strength-label" class="strength-label"></span>
+      </div>
+      <div class="form-group">
+        <label>确认新主密码</label>
+        <div class="input-wrap">
+          <input type="password" id="settings-confirm-pw" placeholder="再次输入新主密码" />
+          <button class="toggle-vis" data-target="settings-confirm-pw" type="button">👁</button>
+        </div>
+      </div>
+      <button id="btn-change-pw" class="btn btn-primary btn-full">更新主密码</button>
+      <div id="settings-error" class="error-msg hidden"></div>
+      <div id="settings-success" class="success-msg hidden"></div>
+
+      <hr class="divider" />
+      <h3 class="section-title danger-title">危险操作</h3>
+      <button id="btn-delete-vault" class="btn btn-danger btn-full">删除密码库（不可恢复）</button>
+    </div>
+  </div>
+
+  <script src="src/crypto.js"></script>
+  <script src="src/vault.js"></script>
+  <script src="src/popup.js"></script>
+</body>
+</html>

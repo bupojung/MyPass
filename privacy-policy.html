@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>MyPass 隐私政策</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1e293b; line-height: 1.7; }
+  h1 { color: #4f46e5; } h2 { margin-top: 32px; color: #334155; }
+  p, li { color: #475569; } ul { padding-left: 20px; }
+  .updated { color: #94a3b8; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>MyPass 隐私政策</h1>
+<p class="updated">最后更新：2026年3月11日</p>
+
+<h2>1. 数据收集</h2>
+<p>MyPass <strong>不收集、不上传任何用户数据</strong>。所有信息仅存储在您的本地设备上。</p>
+
+<h2>2. 数据存储</h2>
+<ul>
+  <li>所有密码条目均使用 <strong>AES-GCM 256位</strong> 加密后存储在 Chrome 的本地存储（<code>chrome.storage.local</code>）中。</li>
+  <li>加密密钥通过 <strong>PBKDF2（31万次迭代）</strong>从您的主密码派生，主密码本身从不被存储。</li>
+  <li>数据不会同步到任何外部服务器，也不会离开您的设备。</li>
+</ul>
+
+<h2>3. 权限说明</h2>
+<ul>
+  <li><strong>storage</strong>：在本地设备存储加密的密码库。</li>
+  <li><strong>clipboardWrite</strong>：将密码复制到剪贴板（30秒后自动清除）。</li>
+  <li><strong>activeTab</strong>：仅用于读取当前标签页域名（预填充网站字段）。</li>
+</ul>
+
+<h2>4. 第三方共享</h2>
+<p>MyPass 不与任何第三方共享数据，不包含任何分析或追踪代码。</p>
+
+<h2>5. 安全性</h2>
+<p>本插件完全在本地运行，无网络请求。主密码如果遗忘将无法找回，因为我们没有任何后端服务。</p>
+
+<h2>6. 联系方式</h2>
+<p>如有问题，请通过 Chrome 插件商城的支持页面联系开发者。</p>
+</body>
+</html>
