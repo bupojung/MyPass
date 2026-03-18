@@ -170,3 +170,54 @@ function base64ToBuffer(base64) {
   }
   return bytes.buffer;
 }
+
+/**
+ * Get raw encrypted vault data for export (no decryption needed).
+ */
+async function getExportData() {
+  const stored = await getStoredVault();
+  if (!stored) throw new Error('NO_VAULT');
+  return {
+    version: 1,
+    exportedAt: Date.now(),
+    salt: stored.salt,
+    verificationHash: stored.verificationHash,
+    iv: stored.iv,
+    ciphertext: stored.ciphertext,
+  };
+}
+
+/**
+ * Import entries from an export file and merge into current vault.
+ * Uses importPassword + export file's salt to re-derive key and decrypt.
+ * Returns { added: N } where N is the number of new entries added.
+ */
+async function importAndMerge(currentKey, exportData, importPassword) {
+  // Validate export format
+  const required = ['version', 'salt', 'verificationHash', 'iv', 'ciphertext'];
+  for (const field of required) {
+    if (!exportData[field]) throw new Error('INVALID_FORMAT');
+  }
+
+  // Re-derive key using export file's salt
+  const importSalt = new Uint8Array(base64ToBuffer(exportData.salt));
+  const importKey = await deriveKey(importPassword, importSalt);
+
+  // Fast password verification
+  const hash = await hashPassword(importPassword, importSalt);
+  if (hash !== exportData.verificationHash) throw new Error('WRONG_PASSWORD');
+
+  // Decrypt export data
+  const plaintext = await decrypt(importKey, exportData.iv, exportData.ciphertext);
+  const importedVault = JSON.parse(plaintext);
+  const importedEntries = importedVault.entries || [];
+
+  // Merge: skip entries with existing ids
+  const currentEntries = await readEntries(currentKey);
+  const currentIds = new Set(currentEntries.map(e => e.id));
+  const newEntries = importedEntries.filter(e => !currentIds.has(e.id));
+  const merged = [...currentEntries, ...newEntries];
+
+  await writeEntries(currentKey, merged);
+  return { added: newEntries.length };
+}

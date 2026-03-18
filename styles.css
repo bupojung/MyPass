@@ -188,6 +188,7 @@ input[type="range"] { padding: 4px 0; border: none; background: transparent; acc
 .modal-header h2 { font-size: 16px; font-weight: 700; }
 .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
 .section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.settings-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
 .danger-title { color: var(--danger); }
 .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 

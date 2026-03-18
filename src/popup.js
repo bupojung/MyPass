@@ -8,6 +8,7 @@ let currentKey = null;
 let allEntries = [];
 let editingId = null;
 let genFillCallback = null; // called when generator result should fill entry form
+let pendingImportData = null;
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -431,6 +432,18 @@ function bindSettingsEvents() {
 
   document.getElementById('btn-change-pw').addEventListener('click', handleChangePw);
   document.getElementById('btn-delete-vault').addEventListener('click', handleDeleteVault);
+
+  document.getElementById('btn-export-vault').addEventListener('click', handleExport);
+  document.getElementById('import-file-input').addEventListener('change', handleImportFileSelected);
+  document.getElementById('modal-import-pw-close').addEventListener('click', closeImportPwModal);
+  document.getElementById('btn-import-cancel').addEventListener('click', closeImportPwModal);
+  document.getElementById('btn-import-confirm').addEventListener('click', handleImportConfirm);
+  document.getElementById('import-master-pw').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleImportConfirm();
+  });
+  document.getElementById('modal-import-pw').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-import-pw')) closeImportPwModal();
+  });
 }
 
 function openSettings() {
@@ -499,6 +512,101 @@ async function handleDeleteVault() {
   closeSettings();
   showScreen('setup');
   bindSetupEvents();
+}
+
+// ===== Export / Import =====
+async function handleExport() {
+  const successEl = document.getElementById('export-import-success');
+  const errorEl = document.getElementById('export-import-error');
+  hideEl(successEl); hideEl(errorEl);
+  try {
+    const data = await getExportData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mypass-backup-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    successEl.textContent = '备份文件已导出';
+    successEl.classList.remove('hidden');
+  } catch (err) {
+    showError(errorEl, '导出失败: ' + err.message);
+  }
+}
+
+function handleImportFileSelected(e) {
+  const successEl = document.getElementById('export-import-success');
+  const errorEl = document.getElementById('export-import-error');
+  hideEl(successEl); hideEl(errorEl);
+
+  const file = e.target.files[0];
+  if (!file) return;
+  // Reset input so same file can be re-selected
+  e.target.value = '';
+
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try {
+      const data = JSON.parse(evt.target.result);
+      const required = ['version', 'salt', 'verificationHash', 'iv', 'ciphertext'];
+      for (const field of required) {
+        if (!data[field]) throw new Error('INVALID_FORMAT');
+      }
+      pendingImportData = data;
+      openImportPwModal();
+    } catch {
+      showError(errorEl, '文件格式无效');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function openImportPwModal() {
+  hideEl(document.getElementById('import-error'));
+  document.getElementById('import-master-pw').value = '';
+  document.getElementById('modal-import-pw').classList.remove('hidden');
+  setTimeout(() => document.getElementById('import-master-pw').focus(), 50);
+}
+
+function closeImportPwModal() {
+  document.getElementById('modal-import-pw').classList.add('hidden');
+  document.getElementById('import-master-pw').value = '';
+  pendingImportData = null;
+}
+
+async function handleImportConfirm() {
+  const password = document.getElementById('import-master-pw').value;
+  const errorEl = document.getElementById('import-error');
+  hideEl(errorEl);
+
+  if (!password) return showError(errorEl, '请输入主密码');
+  if (!pendingImportData) return;
+
+  const btn = document.getElementById('btn-import-confirm');
+  btn.disabled = true;
+  btn.textContent = '导入中…';
+
+  try {
+    const { added } = await importAndMerge(currentKey, pendingImportData, password);
+    closeImportPwModal();
+    allEntries = await readEntries(currentKey);
+    renderEntries(filterEntries(document.getElementById('search-input').value));
+    const successEl = document.getElementById('export-import-success');
+    successEl.textContent = added > 0 ? `导入成功，新增 ${added} 条记录` : '所有条目已存在（无新增）';
+    successEl.classList.remove('hidden');
+  } catch (err) {
+    if (err.message === 'WRONG_PASSWORD') {
+      showError(errorEl, '主密码错误');
+    } else if (err.message === 'INVALID_FORMAT') {
+      showError(errorEl, '文件格式无效');
+    } else {
+      showError(errorEl, '导入失败: ' + err.message);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '导入';
+  }
 }
 
 // ===== Toggle password visibility =====
