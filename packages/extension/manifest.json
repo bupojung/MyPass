@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "MyPass Extension (scaffold)",
+  "version": "0.1.0",
+  "description": "Chrome extension scaffold for MyPass password manager",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

@@ -1,5 +1,7 @@
-*.DS_Store
-__pycache__/
-*.pyc
-*.pyo
-generate-icons.html
+.node_modules/
+dist/
+.env
+*.log
+.packages
+.expo/
+.vscode/

@@ -1,0 +1,14 @@
+{
+  "name": "mypass-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "install": "pnpm -w install",
+    "build": "pnpm -w run build",
+    "test": "pnpm -w run test"
+  }
+}
